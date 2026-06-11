@@ -1,5 +1,13 @@
-import ChatShell from '@/components/layout/ChatShell';
+import { redirect } from 'next/navigation';
 
-export default function Home() {
-  return <ChatShell />;
+import { auth } from '@/lib/auth';
+
+export default async function Home() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect('/login');
+  }
+
+  redirect('/chat');
 }

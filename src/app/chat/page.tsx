@@ -1,5 +1,14 @@
-import ChatShell from '@/components/layout/ChatShell';
+import { redirect } from 'next/navigation';
 
-export default function ChatPage() {
+import ChatShell from '@/components/layout/ChatShell';
+import { auth } from '@/lib/auth';
+
+export default async function ChatPage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect('/login');
+  }
+
   return <ChatShell />;
 }
