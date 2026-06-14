@@ -4,6 +4,16 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getRateLimiter } from '@/lib/rate-limit';
 
+function createDemoResponse(message: string) {
+  const normalized = message.trim().replace(/\s+/g, ' ');
+
+  if (!normalized) {
+    return 'Demo AI is ready. Ask me anything and I will respond in the chat interface.';
+  }
+
+  return `Demo AI response: I received your prompt, "${normalized}". The chat interface is active and ready for testing. If the external model endpoint is reachable, the same prompt will use the real model response automatically.`;
+}
+
 export async function POST(request: Request) {
   const session: any = await auth();
   if (!session?.user) {
@@ -47,27 +57,44 @@ export async function POST(request: Request) {
     return NextResponse.json({ response: 'AI backend is not configured.' }, { status: 200 });
   }
 
-  const response = await fetch(`${ollamaUrl.replace(/\/+$/, '')}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'llama3', prompt: message, stream: false }),
-  });
+  try {
+    const response = await fetch(`${ollamaUrl.replace(/\/+$/, '')}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'llama3', prompt: message, stream: false }),
+    });
 
-  if (!response.ok) {
-    return NextResponse.json({ error: 'Backend unavailable' }, { status: 502 });
+    if (!response.ok) {
+      throw new Error(`Backend returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    const answer = data.response || 'No response returned.';
+
+    await prisma.conversation.create({
+      data: {
+        userId: user.id,
+        messages: JSON.stringify([
+          { role: 'user', content: message },
+          { role: 'assistant', content: answer },
+        ]),
+      },
+    });
+
+    return NextResponse.json({ response: answer });
+  } catch {
+    const answer = createDemoResponse(message);
+
+    await prisma.conversation.create({
+      data: {
+        userId: user.id,
+        messages: JSON.stringify([
+          { role: 'user', content: message },
+          { role: 'assistant', content: answer },
+        ]),
+      },
+    });
+
+    return NextResponse.json({ response: answer }, { status: 200 });
   }
-
-  const data = await response.json();
-
-  await prisma.conversation.create({
-    data: {
-      userId: user.id,
-      messages: JSON.stringify([
-        { role: 'user', content: message },
-        { role: 'assistant', content: data.response || 'No response returned.' },
-      ]),
-    },
-  });
-
-  return NextResponse.json({ response: data.response || 'No response returned.' });
 }

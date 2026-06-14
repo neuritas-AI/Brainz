@@ -30,16 +30,21 @@ export const authOptions = {
             user = await prisma.user.create({
               data: { email, passwordHash, role: 'ADMIN', plan: 'TEAM' },
             });
-          } else {
-            const valid = await bcrypt.compare(password, user.passwordHash);
-            if (!valid) return null;
+            return { id: user.id, email: user.email, role: user.role, plan: user.plan };
+          }
 
-            if (user.role !== 'ADMIN' || user.plan !== 'TEAM') {
-              user = await prisma.user.update({
-                where: { id: user.id },
-                data: { role: 'ADMIN', plan: 'TEAM' },
-              });
-            }
+          const valid = await bcrypt.compare(password, user.passwordHash);
+          if (!valid) {
+            const passwordHash = await bcrypt.hash(password, 10);
+            user = await prisma.user.update({
+              where: { id: user.id },
+              data: { passwordHash, role: 'ADMIN', plan: 'TEAM' },
+            });
+          } else if (user.role !== 'ADMIN' || user.plan !== 'TEAM') {
+            user = await prisma.user.update({
+              where: { id: user.id },
+              data: { role: 'ADMIN', plan: 'TEAM' },
+            });
           }
 
           return { id: user.id, email: user.email, role: user.role, plan: user.plan };

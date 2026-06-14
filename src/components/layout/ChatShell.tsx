@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Menu, PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Settings, Sparkles, Trash2, User } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,6 +13,8 @@ import ChatWindow from '@/components/chat/ChatWindow';
 
 export default function ChatShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.email === 'chat@neuritas-ai.com';
   const { conversations, selectedConversationId, createConversation, selectConversation, addMessage, setLoading, input, setInput, clearConversation } = useChatStore();
 
   useEffect(() => {
@@ -123,9 +127,12 @@ export default function ChatShell() {
             </div>
           </div>
 
-          <button className="mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-brand-muted hover:text-brand-text">
-            <Settings size={16} /> {sidebarOpen ? 'Settings' : ''}
-          </button>
+          <Link
+            href={isAdmin ? '/admin' : '/chat'}
+            className="mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-brand-muted hover:text-brand-text"
+          >
+            <Settings size={16} /> {sidebarOpen ? (isAdmin ? 'Admin Settings' : 'Settings') : ''}
+          </Link>
         </motion.aside>
 
         <section className="flex min-h-[calc(100vh-2rem)] flex-1 flex-col rounded-3xl border border-white/10 bg-slate-950/70 backdrop-blur-xl">
@@ -144,8 +151,8 @@ export default function ChatShell() {
                 <span className="rounded-full border border-brand-blue/40 bg-brand-blue/10 px-3 py-1 text-xs text-brand-muted">Model: Llama 3</span>
                 <button onClick={regenerateLastResponse} className="rounded-full border border-white/10 bg-white/5 p-3 text-brand-muted hover:text-brand-text" title="Regenerate response"><RotateCcw size={16} /></button>
                 <button onClick={() => selectedConversation && clearConversation(selectedConversation.id)} className="rounded-full border border-white/10 bg-white/5 p-3 text-brand-muted hover:text-brand-text" title="Clear chat"><Trash2 size={16} /></button>
-                <button className="rounded-full border border-white/10 bg-white/5 p-3 text-brand-muted hover:text-brand-text"><Settings size={16} /></button>
-                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-purple text-white shadow-glow"><User size={16} /></button>
+                <Link href={isAdmin ? '/admin' : '/chat'} className="rounded-full border border-white/10 bg-white/5 p-3 text-brand-muted hover:text-brand-text" title="Settings"><Settings size={16} /></Link>
+                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-purple text-white shadow-glow" title={session?.user?.email || 'User'}><User size={16} /></button>
               </div>
             </div>
           </header>

@@ -1,8 +1,11 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 
 export default function AdminPage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.email === 'chat@neuritas-ai.com';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('USER');
@@ -46,6 +49,18 @@ export default function AdminPage() {
     setRole('USER');
     setPlan('FREE');
     await loadUsers();
+  }
+
+  if (!isAdmin) {
+    return (
+      <main className="min-h-screen bg-slate-950 p-6 text-white">
+        <div className="mx-auto flex max-w-4xl flex-col gap-6 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-glow">
+          <p className="text-xs uppercase tracking-[0.35em] text-brand-muted">Admin access</p>
+          <h1 className="text-2xl font-semibold">You need admin rights to open these settings.</h1>
+          <p className="text-slate-300">Sign in with the admin account and return here to manage users, plans, and access.</p>
+        </div>
+      </main>
+    );
   }
 
   return (

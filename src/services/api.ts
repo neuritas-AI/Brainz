@@ -11,7 +11,7 @@ export type ChatResponse = { response: string; };
 function fallbackResponse(reason: string): ChatResponse {
   return {
     response:
-      `The AI backend is currently unavailable (${reason}). The ngrok tunnel is rejecting the request, so I am using fallback mode for now. Please verify the ngrok URL or restart the backend tunnel to restore real AI responses.`,
+      'The AI backend is temporarily unavailable, but the chat is still available in demo mode. You can continue testing the interface and admin flow; once the backend is reachable, the same prompt will use the real model response.',
   };
 }
 

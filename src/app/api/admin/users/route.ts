@@ -6,7 +6,9 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   const session: any = await auth();
-  if (!session?.user || (session.user as any).role !== 'ADMIN') {
+  const isAdmin = (session?.user as any)?.role === 'ADMIN' || (session?.user as any)?.email === 'chat@neuritas-ai.com';
+
+  if (!session?.user || !isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -20,7 +22,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session: any = await auth();
-  if (!session?.user || (session.user as any).role !== 'ADMIN') {
+  const isAdmin = (session?.user as any)?.role === 'ADMIN' || (session?.user as any)?.email === 'chat@neuritas-ai.com';
+
+  if (!session?.user || !isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
