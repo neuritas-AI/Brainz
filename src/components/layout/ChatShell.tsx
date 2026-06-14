@@ -128,12 +128,12 @@ export default function ChatShell() {
             </div>
           </div>
 
-          <Link
-            href={isAdmin ? '/admin' : '/chat'}
-            className="mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-brand-muted hover:text-brand-text"
-          >
-            <Settings size={16} /> {sidebarOpen ? (isAdmin ? 'Admin Settings' : 'Settings') : ''}
-          </Link>
+          <div className="mt-4 flex flex-col gap-2">
+            <Link href="/profile" className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-brand-muted hover:text-brand-text">👤 {sidebarOpen ? 'Profile' : ''}</Link>
+            {isAdmin ? (
+              <Link href="/settings" className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-brand-muted hover:text-brand-text"><Settings size={16} /> {sidebarOpen ? 'Settings' : ''}</Link>
+            ) : null}
+          </div>
         </motion.aside>
 
         <section className="flex min-h-[calc(100vh-2rem)] flex-1 flex-col rounded-3xl border border-white/10 bg-slate-950/70 backdrop-blur-xl">
@@ -152,8 +152,8 @@ export default function ChatShell() {
                 <span className="rounded-full border border-brand-blue/40 bg-brand-blue/10 px-3 py-1 text-xs text-brand-muted">Model: Llama 3</span>
                 <button onClick={regenerateLastResponse} className="rounded-full border border-white/10 bg-white/5 p-3 text-brand-muted hover:text-brand-text" title="Regenerate response"><RotateCcw size={16} /></button>
                 <button onClick={() => selectedConversation && clearConversation(selectedConversation.id)} className="rounded-full border border-white/10 bg-white/5 p-3 text-brand-muted hover:text-brand-text" title="Clear chat"><Trash2 size={16} /></button>
-                <Link href={isAdmin ? '/admin' : '/chat'} className="rounded-full border border-white/10 bg-white/5 p-3 text-brand-muted hover:text-brand-text" title="Settings"><Settings size={16} /></Link>
-                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-purple text-white shadow-glow" title={session?.user?.email || 'User'}><User size={16} /></button>
+                {isAdmin ? <Link href="/settings" className="rounded-full border border-white/10 bg-white/5 p-3 text-brand-muted hover:text-brand-text" title="Settings"><Settings size={16} /></Link> : null}
+                <Link href="/profile" className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-purple text-white shadow-glow" title={session?.user?.email || 'Profile'}><User size={16} /></Link>
               </div>
             </div>
           </header>

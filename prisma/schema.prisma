@@ -13,6 +13,8 @@ model User {
   passwordHash String
   role         String   @default("USER")
   plan         String   @default("FREE")
+  profileName  String?
+  profileImage String?
   createdAt    DateTime @default(now())
 
   usage        Usage[]

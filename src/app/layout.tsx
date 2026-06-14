@@ -6,6 +6,11 @@ import SessionProvider from '@/components/providers/SessionProvider';
 export const metadata = {
   title: 'Neuritas-AI',
   description: 'Premium AI chat experience for enterprise use.',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
