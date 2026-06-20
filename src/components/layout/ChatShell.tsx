@@ -4,13 +4,14 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Settings, Sparkles, Trash2, User } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Plus, Settings, Sparkles, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useChatStore } from '@/store/chat-store';
 import { MODEL_PROVIDERS, getModelProvider } from '@/lib/model-providers';
 import { postChatMessage } from '@/services/api';
 import { useLocale, useTranslations } from '@/lib/i18n';
+import CreditsProgressBar from '@/components/shared/CreditsProgressBar';
 import ChatWindow from '@/components/chat/ChatWindow';
 
 const PROJECT_COLOR_CLASSES: Record<string, string> = {
@@ -192,6 +193,10 @@ export default function ChatShell() {
             {sidebarOpen ? t.newChat : ''}
           </button>
 
+          <div className="mt-6">
+            <CreditsProgressBar />
+          </div>
+
           <div className="mt-6 flex-1 overflow-y-auto pr-1">
             {sidebarOpen && (
               <div className="space-y-6">
@@ -211,21 +216,24 @@ export default function ChatShell() {
                           placeholder={t.projectPlaceholder}
                         />
                       </label>
-                      <label className="mt-4 block text-sm text-brand-muted">
-                        {t.color}
-                        <select
-                          value={newProjectColor}
-                          onChange={(event) => setNewProjectColor(event.target.value)}
-                          className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-brand-text outline-none"
-                        >
-                          <option value="red">Red</option>
-                          <option value="blue">Blue</option>
-                          <option value="green">Green</option>
-                          <option value="yellow">Yellow</option>
-                          <option value="purple">Purple</option>
-                          <option value="orange">Orange</option>
-                        </select>
-                      </label>
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <label className="block text-sm text-brand-muted">
+                          {t.color}
+                          <select
+                            value={newProjectColor}
+                            onChange={(event) => setNewProjectColor(event.target.value)}
+                            className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-brand-text outline-none"
+                          >
+                            <option value="red">Red</option>
+                            <option value="blue">Blue</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="purple">Purple</option>
+                            <option value="orange">Orange</option>
+                          </select>
+                        </label>
+                        <div />
+                      </div>
                       <label className="mt-4 block text-sm text-brand-muted">
                         {t.description}
                         <textarea
@@ -292,48 +300,18 @@ export default function ChatShell() {
                 {projects.length > 0 ? (
                   <div className="space-y-3">
                     {projects.map((project) => (
-                      <div key={project.id} className={cn('rounded-[28px] border p-3', project.id === selectedProjectId ? 'border-brand-blue/60 bg-white/10' : 'border-white/10 bg-white/5')}>
-                        <button onClick={() => selectProject(project.id)} className="flex w-full items-center justify-between gap-3 text-left">
-                          <div className="flex items-center gap-2">
-                            <span className={`h-2.5 w-2.5 rounded-full ${PROJECT_COLOR_CLASSES[project.color] ?? PROJECT_COLOR_CLASSES.blue}`} />
-                            <span className="font-medium text-brand-text">{project.name}</span>
-                          </div>
-                          <span className="text-xs text-brand-muted">{project.updatedAt ? new Date(project.updatedAt).toLocaleDateString() : ''}</span>
-                        </button>
-                        {project.id === selectedProjectId && conversations.filter((conversation) => conversation.projectId === project.id).length > 0 ? (
-                          <div className="mt-3 space-y-2">
-                            {conversations.filter((conversation) => conversation.projectId === project.id).map((conversation) => (
-                              <button
-                                key={conversation.id}
-                                onClick={() => selectConversation(conversation.id)}
-                                className={cn('w-full rounded-2xl border p-3 text-left text-sm transition hover:border-brand-blue/60 hover:bg-white/10', conversation.id === selectedConversationId ? 'border-brand-blue/60 bg-white/10' : 'border-white/10 bg-white/5')}
-                              >
-                                <div className="text-sm font-medium text-brand-text">{conversation.title}</div>
-                                <div className="text-xs text-brand-muted">{conversation.messages.length} messages</div>
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
+                      <button
+                        key={project.id}
+                        onClick={() => selectProject(project.id)}
+                        className={cn('w-full rounded-3xl border px-4 py-3 text-left text-sm transition', project.id === selectedProjectId ? 'border-brand-blue/60 bg-white/10' : 'border-white/10 bg-white/5 hover:border-brand-blue/60 hover:bg-white/10')}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2.5 w-2.5 rounded-full ${PROJECT_COLOR_CLASSES[project.color] ?? PROJECT_COLOR_CLASSES.blue}`} />
+                          <span className="font-medium text-brand-text">{project.name}</span>
+                        </div>
+                        {project.description ? <p className="mt-2 text-xs text-brand-muted">{project.description}</p> : null}
+                      </button>
                     ))}
-                  </div>
-                ) : null}
-
-                {conversations.some((conversation) => !conversation.projectId) ? (
-                  <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
-                    <p className="mb-3 text-xs uppercase tracking-[0.25em] text-brand-muted">{t.unassignedChats}</p>
-                    <div className="space-y-2">
-                      {conversations.filter((conversation) => !conversation.projectId).map((conversation) => (
-                        <button
-                          key={conversation.id}
-                          onClick={() => selectConversation(conversation.id)}
-                          className={cn('w-full rounded-2xl border p-3 text-left text-sm transition hover:border-brand-blue/60 hover:bg-white/10', conversation.id === selectedConversationId ? 'border-brand-blue/60 bg-white/10' : 'border-white/10 bg-white/5')}
-                        >
-                          <div className="text-sm font-medium text-brand-text">{conversation.title}</div>
-                          <div className="text-xs text-brand-muted">{conversation.messages.length} messages</div>
-                        </button>
-                      ))}
-                    </div>
                   </div>
                 ) : null}
               </div>
@@ -365,41 +343,30 @@ export default function ChatShell() {
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.35em] text-brand-muted">{t.brandName}</p>
-                    <h1 className="text-2xl font-semibold text-brand-text">{t.enterpriseAssistant}</h1>
+                    <h1 className="text-2xl font-semibold text-brand-text">{t.welcomeTitle}</h1>
                   </div>
                 </div>
+                <p className="max-w-2xl text-sm text-brand-muted">{t.welcomeDescription}</p>
                 {selectedProject ? (
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-brand-muted">
-                    <span className={`inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 font-semibold text-white ${PROJECT_COLOR_CLASSES[selectedProject.color] ?? PROJECT_COLOR_CLASSES.blue}`}>
-                      📁 {selectedProject.name}
-                    </span>
-                    <span>{selectedProject.description}</span>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-brand-text">
+                    <span className={cn('h-2.5 w-2.5 rounded-full', PROJECT_COLOR_CLASSES[selectedProject.color] ?? PROJECT_COLOR_CLASSES.blue)} />
+                    <span>{selectedProject.name}</span>
                   </div>
-                ) : (
-                  <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-muted">{t.noProjectHint}</div>
-                )}
+                ) : null}
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:flex lg:items-center lg:justify-end lg:gap-3">
-                <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-text">
-                  <div className="text-[10px] uppercase tracking-[0.35em] text-brand-muted">{t.activeModel}</div>
-                  <div className="mt-1 font-semibold">{selectedModel?.displayName ?? 'Brainz'}</div>
-                </div>
-                <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-text">
-                  <div className="text-[10px] uppercase tracking-[0.35em] text-brand-muted">{t.currentChat}</div>
-                  <div className="mt-1 font-semibold">{selectedConversation?.title ?? t.newChat}</div>
-                </div>
-                <div className="rounded-3xl border border-white/10 bg-white/5 px-3 py-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-brand-text">
                   <select
                     value={locale}
                     onChange={(event) => setLocale(event.target.value as 'en' | 'nl')}
-                    className="rounded-full border border-white/10 bg-slate-900 px-4 py-2 text-sm text-brand-text outline-none"
+                    className="rounded-full bg-transparent text-sm text-brand-text outline-none"
                   >
                     <option value="en">English</option>
                     <option value="nl">Nederlands</option>
                   </select>
                 </div>
-                <div className="flex items-center gap-2 rounded-3xl border border-white/10 bg-white/5 px-3 py-3">
+                <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-brand-text">
                   <select
                     value={selectedConversation?.modelKey ?? 'brainz_local'}
                     onChange={(event) => {
@@ -408,19 +375,13 @@ export default function ChatShell() {
                         setConversationModel(selectedConversation.id, modelKey);
                       }
                     }}
-                    className="rounded-full border border-white/10 bg-slate-900 px-4 py-2 text-sm text-brand-text outline-none"
+                    className="rounded-full bg-transparent text-sm text-brand-text outline-none"
                   >
                     {activeModels.map((provider) => (
                       <option key={provider.key} value={provider.key}>{provider.displayName}</option>
                     ))}
                   </select>
                 </div>
-                <button onClick={regenerateLastResponse} className="inline-flex h-12 items-center justify-center rounded-3xl border border-white/10 bg-white/5 px-4 text-brand-muted transition hover:text-brand-text" title={t.regenerateResponse}>
-                  <RotateCcw size={18} />
-                </button>
-                <button onClick={() => selectedConversation && clearConversation(selectedConversation.id)} className="inline-flex h-12 items-center justify-center rounded-3xl border border-white/10 bg-white/5 px-4 text-brand-muted transition hover:text-brand-text" title={t.clearChat}>
-                  <Trash2 size={18} />
-                </button>
                 <Link href="/profile" className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue via-brand-purple to-brand-cyan text-white shadow-glow" title={session?.user?.email || 'Profile'}>
                   <User size={18} />
                 </Link>
@@ -444,7 +405,21 @@ export default function ChatShell() {
               <button onClick={() => setSidebarOpen(false)} className="rounded-xl border border-white/10 bg-white/5 p-2 text-brand-muted">✕</button>
             </div>
             <button onClick={() => createConversation()} className="mt-4 flex items-center gap-2 rounded-2xl border border-brand-blue/50 bg-gradient-to-r from-brand-blue/20 to-brand-purple/20 p-3 text-sm font-semibold text-brand-text"> <Plus size={16} /> {t.newChat} </button>
-            <div className="mt-6 flex-1 space-y-2 overflow-y-auto">{conversations.map((item) => <button key={item.id} onClick={() => { selectConversation(item.id); setSidebarOpen(false); }} className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-left"> <div className="text-sm font-medium text-brand-text">{item.title}</div> <div className="text-xs text-brand-muted">{item.messages.length} messages</div></button>)}</div>
+            <div className="mt-6 flex-1 space-y-2 overflow-y-auto">
+            {conversations.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  selectConversation(item.id);
+                  setSidebarOpen(false);
+                }}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-left"
+              >
+                <div className="text-sm font-medium text-brand-text">{item.title}</div>
+                <div className="text-xs text-brand-muted">{item.messages.length} messages</div>
+              </button>
+            ))}
+          </div>
           </motion.aside>
         )}
       </AnimatePresence>

@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     const profileName = typeof body.profileName === 'string' ? body.profileName : '';
     const password = typeof body.password === 'string' ? body.password : '';
     const profileImage = typeof body.profileImage === 'string' ? body.profileImage : '';
+    const locale = typeof body.locale === 'string' && ['en', 'nl'].includes(body.locale) ? body.locale : undefined;
 
     const user = await prisma.user.findUnique({ where: { email: String(session.user.email) } });
     if (!user) {
@@ -35,22 +36,27 @@ export async function POST(request: Request) {
       updates.passwordHash = await bcrypt.hash(password, 10);
     }
 
+    if (locale) {
+      updates.locale = locale;
+    }
+
     try {
       await prisma.user.update({
         where: { id: user.id },
         data: updates,
       });
 
-      return NextResponse.json({ ok: true, user: { id: user.id, email: user.email, profileName: updates.profileName ?? user.profileName, profileImage: updates.profileImage ?? user.profileImage } });
+      return NextResponse.json({ ok: true, user: { id: user.id, email: user.email, profileName: updates.profileName ?? user.profileName, profileImage: updates.profileImage ?? user.profileImage, locale: updates.locale ?? user.locale } });
     } catch (prismaError) {
       const fallback = await supabase
         .from('User')
         .update({
           profileName: typeof updates.profileName === 'string' ? updates.profileName : user.profileName,
           profileImage: typeof updates.profileImage === 'string' ? updates.profileImage : user.profileImage,
+          locale: typeof updates.locale === 'string' ? updates.locale : user.locale,
         })
         .eq('email', user.email)
-        .select('id, email, profileName, profileImage')
+        .select('id, email, profileName, profileImage, locale')
         .single();
 
       if (fallback.error || !fallback.data) {

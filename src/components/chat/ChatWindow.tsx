@@ -8,15 +8,10 @@ import { Copy, RotateCcw, Send, Sparkles, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useChatStore } from '@/store/chat-store';
-
-const suggestions = [
-  'How can AI improve my business?',
-  'Create a sales strategy',
-  'Generate a marketing plan',
-  'Analyze business opportunities',
-];
+import { useTranslations } from '@/lib/i18n';
 
 export default function ChatWindow({ onSend, onRegenerate, onClear }: { onSend: (message: string) => Promise<void>; onRegenerate: () => Promise<void>; onClear: () => void; }) {
+  const t = useTranslations();
   const { conversations, selectedConversationId, input, setInput, isLoading } = useChatStore();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -28,7 +23,7 @@ export default function ChatWindow({ onSend, onRegenerate, onClear }: { onSend: 
   const copyMessage = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
     setCopiedId(id);
-    toast.success('Message copied');
+    toast.success(t.copiedMessage);
     setTimeout(() => setCopiedId(null), 1200);
   };
 
@@ -38,12 +33,12 @@ export default function ChatWindow({ onSend, onRegenerate, onClear }: { onSend: 
         {selectedConversation && selectedConversation.messages.length > 0 && (
           <div className="mx-auto mb-4 flex w-full max-w-5xl items-center justify-between gap-3 rounded-[28px] border border-white/10 bg-white/5 px-4 py-3 shadow-soft backdrop-blur-xl">
             <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-brand-muted">Conversation</p>
+              <p className="text-xs uppercase tracking-[0.35em] text-brand-muted">{t.conversationLabel}</p>
               <p className="text-sm font-semibold text-brand-text">{selectedConversation.title}</p>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={onRegenerate} className="rounded-full border border-white/10 bg-white/5 p-2 text-brand-muted transition hover:text-brand-text" title="Regenerate last response"><RotateCcw size={14} /></button>
-              <button onClick={onClear} className="rounded-full border border-white/10 bg-white/5 p-2 text-brand-muted transition hover:text-brand-text" title="Clear conversation"><Trash2 size={14} /></button>
+              <button onClick={onRegenerate} className="rounded-full border border-white/10 bg-white/5 p-2 text-brand-muted transition hover:text-brand-text" title={t.regenerateResponse}><RotateCcw size={14} /></button>
+              <button onClick={onClear} className="rounded-full border border-white/10 bg-white/5 p-2 text-brand-muted transition hover:text-brand-text" title={t.clearChat}><Trash2 size={14} /></button>
             </div>
           </div>
         )}
@@ -52,10 +47,15 @@ export default function ChatWindow({ onSend, onRegenerate, onClear }: { onSend: 
           <motion.section initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto flex min-h-[58vh] w-full max-w-5xl flex-col items-center justify-center text-center">
             <div className="rounded-[32px] border border-white/10 bg-white/5 p-10 shadow-panel backdrop-blur-xl">
               <p className="text-xs uppercase tracking-[0.35em] text-brand-purple">Brainz</p>
-              <h2 className="mt-4 text-4xl font-semibold text-brand-text">Your Enterprise AI Assistant</h2>
-              <p className="mt-3 max-w-2xl text-sm text-brand-muted">Powered by Neuritas-AI, delivering premium workflows, intelligent guidance, and secure chat experiences for your teams.</p>
+              <h2 className="mt-4 text-4xl font-semibold text-brand-text">{t.welcomeTitle}</h2>
+              <p className="mt-3 max-w-2xl text-sm text-brand-muted">{t.welcomeDescription}</p>
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                {suggestions.map((suggestion) => (
+                {[
+                  t.suggestion1,
+                  t.suggestion2,
+                  t.suggestion3,
+                  t.suggestion4,
+                ].map((suggestion) => (
                   <button
                     key={suggestion}
                     onClick={() => onSend(suggestion)}
@@ -91,7 +91,7 @@ export default function ChatWindow({ onSend, onRegenerate, onClear }: { onSend: 
                 </div>
               </motion.article>
             ))}
-            {isLoading && <TypingIndicator />}
+            {isLoading && <TypingIndicator thinking={t.thinking} />}
           </div>
         )}
       </div>
@@ -107,19 +107,19 @@ export default function ChatWindow({ onSend, onRegenerate, onClear }: { onSend: 
                 onSend(input);
               }
             }}
-            placeholder="Ask Brainz anything..."
+            placeholder={t.askPlaceholder}
             rows={1}
             disabled={isLoading}
             className="min-h-[64px] w-full resize-none rounded-3xl border border-white/10 bg-slate-900 px-4 py-4 text-sm text-brand-text outline-none placeholder:text-brand-muted disabled:cursor-not-allowed"
           />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs text-brand-muted">Shift + Enter for newline · {input.length}/2000</div>
+            <div className="text-xs text-brand-muted">{t.shiftEnterHint} · {input.length}/2000</div>
             <button
               onClick={() => onSend(input)}
               disabled={isLoading || !input.trim()}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-3 text-sm font-semibold text-white shadow-glow transition disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isLoading ? 'Brainz is thinking...' : 'Send message'}
+              {isLoading ? t.thinking : t.sendMessage}
               <Send size={16} />
             </button>
           </div>
@@ -129,11 +129,11 @@ export default function ChatWindow({ onSend, onRegenerate, onClear }: { onSend: 
   );
 }
 
-function TypingIndicator() {
+function TypingIndicator({ thinking }: { thinking: string }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mr-auto max-w-[90%] rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
       <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-brand-muted">Brainz <span className="inline-flex gap-1"><span className="h-2 w-2 rounded-full bg-brand-blue animate-bounce" /> <span className="h-2 w-2 rounded-full bg-brand-purple animate-bounce [animation-delay:120ms]" /> <span className="h-2 w-2 rounded-full bg-brand-blue animate-bounce [animation-delay:240ms]" /></span></div>
-      <div className="mt-2 text-sm text-brand-muted">Brainz is thinking through your request...</div>
+      <div className="mt-2 text-sm text-brand-muted">{thinking}</div>
     </motion.div>
   );
 }

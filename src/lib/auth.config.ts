@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 
 import { prisma } from '@/lib/prisma';
 
+type Locale = 'en' | 'nl';
+
 const DEFAULT_ADMIN_EMAIL = 'chat@neuritas-ai.com';
 const DEFAULT_ADMIN_FALLBACK_PASSWORD = process.env.DEMO_ADMIN_PASSWORD || 'NeuritasAdmin2026!';
 const IS_VERCEL_PRODUCTION = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
@@ -68,6 +70,7 @@ export const authOptions = {
               });
             }
 
+            const locale = (user.locale as Locale) || 'en';
             return {
               id: user.id,
               email: user.email,
@@ -75,6 +78,7 @@ export const authOptions = {
               plan: user.plan,
               name: user.profileName || user.email,
               image: user.profileImage || null,
+              locale,
             };
           } catch (error) {
             if (isDatabaseUnavailable(error)) {
@@ -92,7 +96,8 @@ export const authOptions = {
           const valid = await bcrypt.compare(password, user.passwordHash);
           if (!valid) return null;
 
-          return { id: user.id, email: user.email, role: user.role, plan: user.plan };
+          const locale = (user.locale as Locale) || 'en';
+          return { id: user.id, email: user.email, role: user.role, plan: user.plan, locale };
         } catch (error) {
           if (isDatabaseUnavailable(error)) {
             return null;
@@ -110,6 +115,7 @@ export const authOptions = {
         token.plan = user.plan;
         token.name = user.name || user.email;
         token.picture = user.image || null;
+        token.locale = (user.locale as Locale) || 'en';
       }
       return token;
     },
@@ -120,6 +126,7 @@ export const authOptions = {
         session.user.plan = token.plan;
         session.user.name = (token.name as string) || session.user.email;
         session.user.image = (token.picture as string) || null;
+        session.user.locale = token.locale || 'en';
       }
       return session;
     },
