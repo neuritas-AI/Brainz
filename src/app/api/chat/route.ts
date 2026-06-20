@@ -74,8 +74,11 @@ export async function POST(request: Request) {
     ? `Project context: ${projectContext}\n\n${message}`
     : message;
 
+  const openAIKey = process.env.OPENAI_API_KEY;
+  const useOpenAI = openAIKey && actualModelKey === 'gpt5';
   const ollamaUrl = process.env.OLLAMA_URL || process.env.NEXT_PUBLIC_API_URL;
-  if (!ollamaUrl) {
+
+  if (!useOpenAI && !ollamaUrl) {
     return NextResponse.json({ response: 'AI backend is not configured.' }, { status: 200 });
   }
 
@@ -86,10 +89,32 @@ export async function POST(request: Request) {
   const recordMessages = conversation ? JSON.parse(conversation.messages) : [];
 
   try {
-    const response = await fetch(`${ollamaUrl.replace(/\/+$/, '')}/api/generate`, {
+    const openAiPayload = {
+      model: 'gpt-5',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.2,
+      max_tokens: 1000,
+    };
+
+    const ollamaPayload = {
+      model: actualModelKey === 'brainz_local' ? 'llama3' : actualModelKey,
+      prompt,
+      stream: false,
+    };
+
+    const requestUrl = useOpenAI
+      ? 'https://api.openai.com/v1/chat/completions'
+      : `${ollamaUrl!.replace(/\/+$/, '')}/api/generate`;
+
+    const response = await fetch(requestUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: actualModelKey === 'brainz_local' ? 'llama3' : actualModelKey, prompt, stream: false }),
+      headers: useOpenAI
+        ? {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${openAIKey}`,
+          }
+        : { 'Content-Type': 'application/json' },
+      body: JSON.stringify(useOpenAI ? openAiPayload : ollamaPayload),
     });
 
     if (!response.ok) {
@@ -97,7 +122,9 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json();
-    const answer = data.response || 'No response returned.';
+    const answer = useOpenAI
+      ? data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || 'No response returned.'
+      : data.response || 'No response returned.';
 
     const updatedMessages = [
       ...recordMessages,

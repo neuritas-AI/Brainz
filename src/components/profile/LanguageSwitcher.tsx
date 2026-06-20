@@ -16,8 +16,8 @@ export default function LanguageSwitcher() {
           onChange={(event) => setLocale(event.target.value as 'en' | 'nl')}
           className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-brand-text outline-none"
         >
-          <option value="en">English</option>
-          <option value="nl">Nederlands</option>
+          <option className="bg-slate-950 text-brand-text" value="en">English</option>
+          <option className="bg-slate-950 text-brand-text" value="nl">Nederlands</option>
         </select>
       </label>
     </div>

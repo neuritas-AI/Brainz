@@ -356,17 +356,17 @@ export default function ChatShell() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-brand-text">
+                <div className="rounded-full border border-white/10 bg-slate-950 px-4 py-2 text-sm text-brand-text">
                   <select
                     value={locale}
                     onChange={(event) => setLocale(event.target.value as 'en' | 'nl')}
-                    className="rounded-full bg-transparent text-sm text-brand-text outline-none"
+                    className="rounded-full bg-slate-950 text-sm text-brand-text outline-none"
                   >
-                    <option value="en">English</option>
-                    <option value="nl">Nederlands</option>
+                    <option className="bg-slate-950 text-brand-text" value="en">English</option>
+                    <option className="bg-slate-950 text-brand-text" value="nl">Nederlands</option>
                   </select>
                 </div>
-                <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-brand-text">
+                <div className="rounded-full border border-white/10 bg-slate-950 px-4 py-2 text-sm text-brand-text">
                   <select
                     value={selectedConversation?.modelKey ?? 'brainz_local'}
                     onChange={(event) => {
@@ -375,10 +375,10 @@ export default function ChatShell() {
                         setConversationModel(selectedConversation.id, modelKey);
                       }
                     }}
-                    className="rounded-full bg-transparent text-sm text-brand-text outline-none"
+                    className="rounded-full bg-slate-950 text-sm text-brand-text outline-none"
                   >
                     {activeModels.map((provider) => (
-                      <option key={provider.key} value={provider.key}>{provider.displayName}</option>
+                      <option className="bg-slate-950 text-brand-text" key={provider.key} value={provider.key}>{provider.displayName}</option>
                     ))}
                   </select>
                 </div>
