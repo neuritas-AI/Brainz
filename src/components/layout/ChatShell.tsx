@@ -4,12 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, Menu, PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Settings, Sparkles, Trash2, User } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Settings, Sparkles, Trash2, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useChatStore } from '@/store/chat-store';
 import { MODEL_PROVIDERS, getModelProvider } from '@/lib/model-providers';
 import { postChatMessage } from '@/services/api';
+import { useLocale, useTranslations } from '@/lib/i18n';
 import ChatWindow from '@/components/chat/ChatWindow';
 
 const PROJECT_COLOR_CLASSES: Record<string, string> = {
@@ -31,6 +32,8 @@ export default function ChatShell() {
   const [activeModels, setActiveModels] = useState<typeof MODEL_PROVIDERS>(MODEL_PROVIDERS);
 
   const { data: session } = useSession();
+  const { locale, setLocale } = useLocale();
+  const t = useTranslations();
   const user = session?.user as { email?: string | null; role?: string; plan?: string } | undefined;
   const isAdmin = user?.role === 'ADMIN' || user?.email === 'chat@neuritas-ai.com';
   const {
@@ -46,7 +49,6 @@ export default function ChatShell() {
     setInput,
     clearConversation,
     selectProject,
-    createProject,
     setProjects,
     setConversations,
     setConversationModel,
@@ -172,8 +174,8 @@ export default function ChatShell() {
               </div>
               {sidebarOpen && (
                 <div>
-                  <p className="text-xs uppercase tracking-[0.35em] text-brand-muted">Brainz</p>
-                  <p className="text-sm font-semibold text-brand-text">AI workspace</p>
+                  <p className="text-xs uppercase tracking-[0.35em] text-brand-muted">{t.brandName}</p>
+                  <p className="text-sm font-semibold text-brand-text">{t.workspace}</p>
                 </div>
               )}
             </div>
@@ -187,7 +189,7 @@ export default function ChatShell() {
             className="mt-5 flex items-center justify-center gap-2 rounded-3xl border border-brand-blue/40 bg-gradient-to-r from-brand-blue/20 to-brand-purple/20 px-4 py-3 text-sm font-semibold text-brand-text shadow-glow transition hover:scale-[1.01]"
           >
             <Plus size={16} />
-            {sidebarOpen ? 'New Chat' : ''}
+            {sidebarOpen ? t.newChat : ''}
           </button>
 
           <div className="mt-6 flex-1 overflow-y-auto pr-1">
@@ -195,22 +197,22 @@ export default function ChatShell() {
               <div className="space-y-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-brand-muted">
-                    <span>Projects</span>
-                    <button onClick={() => setNewProjectMode((prev) => !prev)} className="text-brand-blue transition hover:text-brand-purple">+ Add</button>
+                    <span>{t.projects}</span>
+                    <button onClick={() => setNewProjectMode((prev) => !prev)} className="text-brand-blue transition hover:text-brand-purple">+ {t.add}</button>
                   </div>
                   {newProjectMode ? (
                     <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-soft">
                       <label className="block text-sm text-brand-muted">
-                        Project name
+                        {t.projectName}
                         <input
                           value={newProjectName}
                           onChange={(event) => setNewProjectName(event.target.value)}
                           className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-brand-text outline-none"
-                          placeholder="RSTB Car Detailing"
+                          placeholder={t.projectPlaceholder}
                         />
                       </label>
                       <label className="mt-4 block text-sm text-brand-muted">
-                        Color
+                        {t.color}
                         <select
                           value={newProjectColor}
                           onChange={(event) => setNewProjectColor(event.target.value)}
@@ -225,29 +227,29 @@ export default function ChatShell() {
                         </select>
                       </label>
                       <label className="mt-4 block text-sm text-brand-muted">
-                        Description
+                        {t.description}
                         <textarea
                           value={newProjectDescription}
                           onChange={(event) => setNewProjectDescription(event.target.value)}
                           className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-brand-text outline-none"
-                          placeholder="Alles rond marketing en klantenbeheer."
+                          placeholder={t.descriptionPlaceholder}
                           rows={2}
                         />
                       </label>
                       <label className="mt-4 block text-sm text-brand-muted">
-                        Instructions
+                        {t.instructions}
                         <textarea
                           value={newProjectInstructions}
                           onChange={(event) => setNewProjectInstructions(event.target.value)}
                           className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-brand-text outline-none"
-                          placeholder="Gebruik deze projectcontext voor alle gesprekken."
+                          placeholder={t.instructionsPlaceholder}
                           rows={2}
                         />
                       </label>
                       <button
                         onClick={async () => {
                           if (!newProjectName.trim()) {
-                            toast.error('Please add a project name.');
+                            toast.error(t.projectNameRequired);
                             return;
                           }
 
@@ -263,9 +265,9 @@ export default function ChatShell() {
                               }),
                             });
 
-                            const data = await response.json();
+                            const data = await response.json().catch(() => ({}));
                             if (!response.ok) {
-                              throw new Error(data.error || 'Unable to create project.');
+                              throw new Error(data.error || t.unableCreateProject);
                             }
 
                             setProjects([data.project, ...projects]);
@@ -274,14 +276,14 @@ export default function ChatShell() {
                             setNewProjectName('');
                             setNewProjectDescription('');
                             setNewProjectInstructions('');
-                            toast.success('Project created successfully.');
+                            toast.success(t.projectCreated);
                           } catch (error) {
-                            toast.error(error instanceof Error ? error.message : 'Unable to create project.');
+                            toast.error(error instanceof Error ? error.message : t.unableCreateProject);
                           }
                         }}
                         className="mt-4 w-full rounded-2xl bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-3 text-sm font-semibold text-white"
                       >
-                        Create project
+                        {t.createProject}
                       </button>
                     </div>
                   ) : null}
@@ -319,7 +321,7 @@ export default function ChatShell() {
 
                 {conversations.some((conversation) => !conversation.projectId) ? (
                   <div className="rounded-[28px] border border-white/10 bg-white/5 p-4">
-                    <p className="mb-3 text-xs uppercase tracking-[0.25em] text-brand-muted">Unassigned chats</p>
+                    <p className="mb-3 text-xs uppercase tracking-[0.25em] text-brand-muted">{t.unassignedChats}</p>
                     <div className="space-y-2">
                       {conversations.filter((conversation) => !conversation.projectId).map((conversation) => (
                         <button
@@ -341,15 +343,15 @@ export default function ChatShell() {
           <div className="mt-4 flex flex-col gap-3">
             <Link href="/profile" className="flex items-center gap-2 rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-muted transition hover:text-brand-text">
               <User size={18} />
-              {sidebarOpen ? 'Profile' : ''}
+              {sidebarOpen ? t.profile : ''}
             </Link>
             {isAdmin ? (
               <Link href="/settings" className="flex items-center gap-2 rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-muted transition hover:text-brand-text">
                 <Settings size={18} />
-                {sidebarOpen ? 'Settings' : ''}
+                {sidebarOpen ? t.settings : ''}
               </Link>
             ) : null}
-            {sidebarOpen && <p className="text-xs text-brand-muted">Powered by Neuritas-AI</p>}
+            {sidebarOpen && <p className="text-xs text-brand-muted">{t.poweredBy}</p>}
           </div>
         </motion.aside>
 
@@ -362,8 +364,8 @@ export default function ChatShell() {
                     <Sparkles size={24} />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.35em] text-brand-muted">Brainz</p>
-                    <h1 className="text-2xl font-semibold text-brand-text">Enterprise AI assistant</h1>
+                    <p className="text-xs uppercase tracking-[0.35em] text-brand-muted">{t.brandName}</p>
+                    <h1 className="text-2xl font-semibold text-brand-text">{t.enterpriseAssistant}</h1>
                   </div>
                 </div>
                 {selectedProject ? (
@@ -374,18 +376,28 @@ export default function ChatShell() {
                     <span>{selectedProject.description}</span>
                   </div>
                 ) : (
-                  <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-muted">No project selected. Choose a project to tie this chat to a workflow.</div>
+                  <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-muted">{t.noProjectHint}</div>
                 )}
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:flex lg:items-center lg:justify-end lg:gap-3">
                 <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-text">
-                  <div className="text-[10px] uppercase tracking-[0.35em] text-brand-muted">Active model</div>
+                  <div className="text-[10px] uppercase tracking-[0.35em] text-brand-muted">{t.activeModel}</div>
                   <div className="mt-1 font-semibold">{selectedModel?.displayName ?? 'Brainz'}</div>
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-text">
-                  <div className="text-[10px] uppercase tracking-[0.35em] text-brand-muted">Current chat</div>
-                  <div className="mt-1 font-semibold">{selectedConversation?.title ?? 'New conversation'}</div>
+                  <div className="text-[10px] uppercase tracking-[0.35em] text-brand-muted">{t.currentChat}</div>
+                  <div className="mt-1 font-semibold">{selectedConversation?.title ?? t.newChat}</div>
+                </div>
+                <div className="rounded-3xl border border-white/10 bg-white/5 px-3 py-3">
+                  <select
+                    value={locale}
+                    onChange={(event) => setLocale(event.target.value as 'en' | 'nl')}
+                    className="rounded-full border border-white/10 bg-slate-900 px-4 py-2 text-sm text-brand-text outline-none"
+                  >
+                    <option value="en">English</option>
+                    <option value="nl">Nederlands</option>
+                  </select>
                 </div>
                 <div className="flex items-center gap-2 rounded-3xl border border-white/10 bg-white/5 px-3 py-3">
                   <select
@@ -403,10 +415,10 @@ export default function ChatShell() {
                     ))}
                   </select>
                 </div>
-                <button onClick={regenerateLastResponse} className="inline-flex h-12 items-center justify-center rounded-3xl border border-white/10 bg-white/5 px-4 text-brand-muted transition hover:text-brand-text" title="Regenerate response">
+                <button onClick={regenerateLastResponse} className="inline-flex h-12 items-center justify-center rounded-3xl border border-white/10 bg-white/5 px-4 text-brand-muted transition hover:text-brand-text" title={t.regenerateResponse}>
                   <RotateCcw size={18} />
                 </button>
-                <button onClick={() => selectedConversation && clearConversation(selectedConversation.id)} className="inline-flex h-12 items-center justify-center rounded-3xl border border-white/10 bg-white/5 px-4 text-brand-muted transition hover:text-brand-text" title="Clear chat">
+                <button onClick={() => selectedConversation && clearConversation(selectedConversation.id)} className="inline-flex h-12 items-center justify-center rounded-3xl border border-white/10 bg-white/5 px-4 text-brand-muted transition hover:text-brand-text" title={t.clearChat}>
                   <Trash2 size={18} />
                 </button>
                 <Link href="/profile" className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue via-brand-purple to-brand-cyan text-white shadow-glow" title={session?.user?.email || 'Profile'}>
@@ -431,7 +443,7 @@ export default function ChatShell() {
               <div className="flex items-center gap-2 text-sm font-semibold"><Sparkles className="text-brand-purple" size={18} />Brainz</div>
               <button onClick={() => setSidebarOpen(false)} className="rounded-xl border border-white/10 bg-white/5 p-2 text-brand-muted">✕</button>
             </div>
-            <button onClick={() => createConversation()} className="mt-4 flex items-center gap-2 rounded-2xl border border-brand-blue/50 bg-gradient-to-r from-brand-blue/20 to-brand-purple/20 p-3 text-sm font-semibold text-brand-text"> <Plus size={16} /> New Chat </button>
+            <button onClick={() => createConversation()} className="mt-4 flex items-center gap-2 rounded-2xl border border-brand-blue/50 bg-gradient-to-r from-brand-blue/20 to-brand-purple/20 p-3 text-sm font-semibold text-brand-text"> <Plus size={16} /> {t.newChat} </button>
             <div className="mt-6 flex-1 space-y-2 overflow-y-auto">{conversations.map((item) => <button key={item.id} onClick={() => { selectConversation(item.id); setSidebarOpen(false); }} className="w-full rounded-2xl border border-white/10 bg-white/5 p-3 text-left"> <div className="text-sm font-medium text-brand-text">{item.title}</div> <div className="text-xs text-brand-muted">{item.messages.length} messages</div></button>)}</div>
           </motion.aside>
         )}

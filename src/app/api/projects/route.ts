@@ -29,25 +29,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const body = await request.json();
-  const name = typeof body.name === 'string' ? body.name.trim() : '';
-  const color = typeof body.color === 'string' ? body.color : 'blue';
-  const description = typeof body.description === 'string' ? body.description.trim() : '';
-  const instructions = typeof body.instructions === 'string' ? body.instructions.trim() : '';
+  try {
+    const payload = await request.text();
+    const body = payload ? JSON.parse(payload) : {};
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    const color = typeof body.color === 'string' ? body.color : 'blue';
+    const description = typeof body.description === 'string' ? body.description.trim() : '';
+    const instructions = typeof body.instructions === 'string' ? body.instructions.trim() : '';
 
-  if (!name) {
-    return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
+    }
+
+    const project = await prisma.project.create({
+      data: {
+        userId: user.id,
+        name,
+        color,
+        description,
+        instructions: instructions || null,
+      },
+    });
+
+    return NextResponse.json({ project }, { status: 201 });
+  } catch (error) {
+    console.error('Failed to create project:', error);
+    return NextResponse.json({ error: 'Unable to create project.' }, { status: 500 });
   }
-
-  const project = await prisma.project.create({
-    data: {
-      userId: user.id,
-      name,
-      color,
-      description,
-      instructions: instructions || null,
-    },
-  });
-
-  return NextResponse.json({ project }, { status: 201 });
 }
