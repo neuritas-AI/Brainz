@@ -55,13 +55,17 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ ok: true, user }, { status: 201 });
     } catch (prismaError) {
-      const fallback = await supabase.from('User').insert([
-        { id: crypto.randomUUID(), email, passwordHash, role, plan, createdAt: new Date().toISOString() },
-      ]).select('id, email, role, plan').single();
+      if (!supabase) {
+      throw prismaError;
+    }
 
-      if (fallback.error || !fallback.data) {
-        throw prismaError;
-      }
+    const fallback = await supabase.from('User').insert([
+      { id: crypto.randomUUID(), email, passwordHash, role, plan, createdAt: new Date().toISOString() },
+    ]).select('id, email, role, plan').single();
+
+    if (fallback.error || !fallback.data) {
+      throw prismaError;
+    }
 
       return NextResponse.json({ ok: true, user: fallback.data, source: 'supabase' }, { status: 201 });
     }

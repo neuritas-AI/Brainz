@@ -48,6 +48,10 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ ok: true, user: { id: user.id, email: user.email, profileName: updates.profileName ?? user.profileName, profileImage: updates.profileImage ?? user.profileImage, locale: updates.locale ?? user.locale } });
     } catch (prismaError) {
+      if (!supabase) {
+        throw prismaError;
+      }
+
       const fallback = await supabase
         .from('User')
         .update({
